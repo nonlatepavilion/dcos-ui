@@ -29,12 +29,11 @@ The `ConnectionEvent` provides a common interface for all different event types.
 
 Use the following event types...
 
- * - `OPEN` when opening the connection
- * - `DATA` every time data is received from the server
- * - `TIMEOUT` when a timeout occurred
- * - `ERROR` when an error occurred
- * - `COMPLETE` when the connection closes without any errors
- * - `ABORT` when the connection was aborted by something
+ * `OPEN` when opening the connection
+ * `DATA` every time data is received from the server
+ * `ERROR` when an error occurred
+ * `COMPLETE` when the connection closes without any errors
+ * `ABORT` when the connection was aborted by something
 
 ### Target
 
@@ -81,4 +80,4 @@ Value | Data type of response property
 "blob" | Blob
 "document" | Document
 "json" | JavaScript object, parsed from a JSON string returned by the server
-"text" | DOMString 
+"text" | DOMString

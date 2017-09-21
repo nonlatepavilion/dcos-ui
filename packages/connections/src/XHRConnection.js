@@ -12,7 +12,6 @@ const ALLOWED_RESPONSE_TYPES = [
 
 /**
  * Basic XHR Connection
- * @todo add/remove headers
  */
 export default class XHRConnection extends AbstractConnection {
   /**
@@ -24,6 +23,7 @@ export default class XHRConnection extends AbstractConnection {
    * @param {*} [options.body] – payload for request
    * @param {object} [options.headers] – additional headers (like content-type)
    * @param {string} [options.responseType]
+   * @param {int} [timeout]
    */
   constructor(url, options = {}) {
     super(url);
@@ -56,7 +56,7 @@ export default class XHRConnection extends AbstractConnection {
 
     if (!Number.isSafeInteger(timeout) || timeout < 0) {
       throw new Error(
-        `Invalid timeout. Type must 0 or positive, is "${timeout}".`
+        `Invalid timeout. Must be an integer >= 0 and less than Number.MAX_SAFE_INTEGER, is "${timeout}".`
       );
     }
 
@@ -89,17 +89,45 @@ export default class XHRConnection extends AbstractConnection {
     Object.defineProperty(this, "responseType", { value: responseType });
 
     /**
+     * @property {int}
+     * @protected
+     * @name XHRConnection#timeout
+     */
+    Object.defineProperty(this, "timeout", { value: timeout });
+
+    /**
      * @property {XMLHttpRequest}
      * @protected
      * @name XHRConnection#xhr
      */
     Object.defineProperty(this, "xhr", { value: new XMLHttpRequest() });
-
-    this.xhr.timeout = timeout;
   }
 
   get response() {
-    return this.xhr.response;
+    if (this.xhr.response && this.xhr.responseType === this.responseType) {
+      return this.xhr.response;
+    }
+
+    /**
+     * IE11 doesnt support responseType="json" correctly,
+     * it will fall back to plain text, so we have to parse it.
+     */
+    if (
+      this.responseType === "json" &&
+      this.xhr.response &&
+      this.xhr.responseType === ""
+    ) {
+      return JSON.parse(this.xhr.response);
+    }
+
+    /**
+     * make sure there is no other weird browser behaviour
+     */
+    if (process.env.NODE_ENV !== "production") {
+      throw new TypeError(
+        `Unexpected XHR responseType (expected "${this.responseType}", was "${this.xhr.responseType}").`
+      );
+    }
   }
 
   get status() {
@@ -108,15 +136,10 @@ export default class XHRConnection extends AbstractConnection {
 
   /**
    * create, prepare, open and send the xhr request
-   * @param {string} [token] – authentication token
    */
   open() {
-    super.open();
-
     if (this.state !== XHRConnection.INIT) {
-      throw new Error(
-        `Can only open initialized Connections. State is "${this.state}"`
-      );
+      return;
     }
 
     this.xhr.addEventListener("progress", () => {
@@ -129,18 +152,18 @@ export default class XHRConnection extends AbstractConnection {
     this.xhr.addEventListener("load", () => {
       this.state = XHRConnection.CLOSED;
 
-      if (this.status >= 400) {
+      if (this.status < 400) {
         this.emit(
-          ConnectionEvent.ERROR,
-          new ConnectionEvent(this, ConnectionEvent.ERROR)
+          ConnectionEvent.COMPLETE,
+          new ConnectionEvent(this, ConnectionEvent.COMPLETE)
         );
 
         return;
       }
 
       this.emit(
-        ConnectionEvent.COMPLETE,
-        new ConnectionEvent(this, ConnectionEvent.COMPLETE)
+        ConnectionEvent.ERROR,
+        new ConnectionEvent(this, ConnectionEvent.ERROR)
       );
     });
 
@@ -166,12 +189,13 @@ export default class XHRConnection extends AbstractConnection {
       this.state = XHRConnection.CLOSED;
 
       this.emit(
-        ConnectionEvent.TIMEOUT,
-        new ConnectionEvent(this, ConnectionEvent.TIMEOUT)
+        ConnectionEvent.ERROR,
+        new ConnectionEvent(this, ConnectionEvent.ERROR)
       );
     });
 
     this.xhr.open(this.method, this.url);
+    this.xhr.timeout = this.timeout;
     this.state = XHRConnection.OPEN;
     this.emit(
       ConnectionEvent.OPEN,
@@ -189,18 +213,15 @@ export default class XHRConnection extends AbstractConnection {
   }
 
   /**
-   * Close the connection
    * @description Close the connection and abort open requests
    */
   close() {
-    super.close();
-
-    if (this.state !== XHRConnection.OPEN) {
-      throw new Error(
-        `Can only close open Connections. Current State is "${this.state}"`
-      );
+    if (this.state === XHRConnection.INIT) {
+      this.state = XHRConnection.CLOSED;
     }
-    this.state = XHRConnection.CLOSED;
-    this.xhr.abort();
+
+    if (this.state === XHRConnection.OPEN) {
+      this.xhr.abort();
+    }
   }
 }

@@ -108,17 +108,19 @@ describe("XHRConnection", () => {
       expect(req.xhr.setRequestHeader.mock.calls).toEqual([["foo", "bar"]]);
     });
 
-    it("cant open an already opened connection again", () => {
+    it("does nothing when open an already opened connection again", () => {
       const req = new XHRConnection(url);
+      req.state = XHRConnection.OPEN;
       req.open();
-      expect(() => req.open()).toThrowError();
+      expect(req.xhr.open).not.toHaveBeenCalled();
     });
 
-    it("cant open an already closed connection again", () => {
+    it("does nothing when opening an already closed connection again", () => {
       const req = new XHRConnection(url);
+      req.state = XHRConnection.CLOSED;
       req.open();
-      req.close();
-      expect(() => req.open()).toThrowError();
+      expect(req.xhr.open).not.toHaveBeenCalled();
+      expect(req.state).toBe(XHRConnection.CLOSED);
     });
   });
 
@@ -129,16 +131,18 @@ describe("XHRConnection", () => {
       expect(() => req.close()).not.toThrow();
     });
 
-    it("cant close an not yet opened connection", () => {
+    it("does nothing when closing an not yet opened connection", () => {
       const req = new XHRConnection(url);
-      expect(() => req.close()).toThrowError();
+      req.close();
+      expect(req.xhr.abort).not.toHaveBeenCalled();
+      expect(req.state).toBe(XHRConnection.CLOSED);
     });
 
-    it("cant close an already closed connection again", () => {
+    it("does nothing when closing an already closed connection again", () => {
       const req = new XHRConnection(url);
-      req.open();
+      req.state = XHRConnection.CLOSED;
       req.close();
-      expect(() => req.close()).toThrowError();
+      expect(req.xhr.abort).not.toHaveBeenCalled();
     });
   });
 
@@ -266,6 +270,32 @@ describe("XHRConnection", () => {
       req.xhr.__emit("load");
 
       expect(cb).toHaveBeenCalled();
+    });
+  });
+  describe("response", () => {
+    it("get correct resonse from xhr (json)", () => {
+      const req = new XHRConnection(url);
+      const str = `{"foo":"bar"}`;
+      const json = JSON.parse(str);
+      req.xhr.response = json;
+      req.xhr.responseType = "json";
+      expect(req.response).toEqual(json);
+    });
+    it("get correct resonse from xhr (ie11 polyfill)", () => {
+      const req = new XHRConnection(url);
+      const str = `{"foo":"bar"}`;
+      const json = JSON.parse(str);
+      req.xhr.response = str;
+      req.xhr.responseType = "";
+      expect(req.response).toEqual(json);
+    });
+    it("get correct resonse from xhr (throws)", () => {
+      const req = new XHRConnection(url);
+      const str = `{"foo":"bar"}`;
+      const json = JSON.parse(str);
+      req.xhr.response = json;
+      req.xhr.responseType = "blob";
+      expect(() => req.response).toThrow();
     });
   });
 });

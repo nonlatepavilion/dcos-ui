@@ -1,16 +1,52 @@
 import AbstractConnection from "./AbstractConnection";
 
+/**
+ * Connection open event
+ *
+ * @constant
+ * @type {Symbol}
+ */
 const OPEN = Symbol("OPEN");
+
+/**
+ * Connection data event
+ *
+ * @constant
+ * @type {Symbol}
+ */
 const DATA = Symbol("DATA");
-const TIMEOUT = Symbol("TIMEOUT");
+
+/**
+ * Connection error event
+ *
+ * @constant
+ * @type {Symbol}
+ */
 const ERROR = Symbol("ERROR");
+
+/**
+ * Connection complete event
+ *
+ * @constant
+ * @type {Symbol}
+ */
 const COMPLETE = Symbol("COMPLETE");
+
+/**
+ * Connection abort event
+ *
+ * @constant
+ * @type {Symbol}
+ */
 const ABORT = Symbol("ABORT");
 
+/**
+ * Basic Connection Event Object
+ */
 export default class ConnectionEvent {
   /**
    * Connection event
-   * @param {EventEmitter} target
+   * @param {AbstractConnection} target
    * @param {Symbol} type
    */
   constructor(target, type) {
@@ -20,14 +56,14 @@ export default class ConnectionEvent {
       );
     }
 
-    if (![OPEN, DATA, TIMEOUT, ERROR, COMPLETE, ABORT].includes(type)) {
+    if (![OPEN, DATA, ERROR, COMPLETE, ABORT].includes(type)) {
       throw new Error(
-        `Invalid type "${type}", allowed types are OPEN, DATA, TIMEOUT, ERROR, COMPLETE, ABORT`
+        `Invalid type "${type}", allowed types are OPEN, DATA, ERROR, COMPLETE, ABORT`
       );
     }
 
     /**
-     * @property {EventEmitter}
+     * @property {AbstractConnection}
      * @name ConnectionEvent#target
      */
     Object.defineProperty(this, "target", { value: target });
@@ -45,10 +81,6 @@ export default class ConnectionEvent {
 
   static get DATA() {
     return DATA;
-  }
-
-  static get TIMEOUT() {
-    return TIMEOUT;
   }
 
   static get ERROR() {
