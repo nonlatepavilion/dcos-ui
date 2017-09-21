@@ -43,7 +43,7 @@ export default class ConnectionQueue {
    */
   first() {
     if (this.connections.first() === undefined) {
-      throw new Error("Cant get first() from empty Queue");
+      return undefined;
     }
 
     return this.connections.first().connection;
@@ -54,39 +54,41 @@ export default class ConnectionQueue {
    * @return {ConnectionQueue} – ConnectionQueue without first connection
    */
   shift() {
-    if (this.connections.first() === undefined) {
-      throw new Error("Cant shift() on empty Queue");
-    }
-
     return new ConnectionQueue(this.connections.shift());
   }
 
   /**
-   * Adds given connection with given (or default) priority to queue
+   * Adds given connection to queue
    * @param {AbstractConnection} connection – Connection to be added to queue
-   * @param {Integer} priority – priority of connection
+   * @param {Integer} [priority] – priority of connection
    * @return {ConnectionQueue} - ConnectionQueue containing the added connection
    */
   enqueue(connection, priority) {
-    if (this.includes(connection)) {
-      throw new Error(`Cant enqueue already queued connection.`);
+    const item = new ConnectionQueueItem(connection, priority);
+    const index = this.connections.findIndex(arrayItem =>
+      arrayItem.equals(item)
+    );
+    let connections = null;
+
+    if (index !== -1) {
+      connections = this.connections.update(index, item);
+    } else {
+      connections = this.connections.push(item);
     }
 
-    return new ConnectionQueue(
-      this.connections
-        .push(new ConnectionQueueItem(connection, priority))
-        .sort(({ priority: a }, { priority: b }) => {
-          if (a > b) {
-            return -1;
-          }
+    connections = connections.sort(({ priority: a }, { priority: b }) => {
+      if (a > b) {
+        return -1;
+      }
 
-          if (a < b) {
-            return 1;
-          }
+      if (a < b) {
+        return 1;
+      }
 
-          return 0;
-        })
-    );
+      return 0;
+    });
+
+    return new ConnectionQueue(connections);
   }
 
   /**
@@ -95,13 +97,11 @@ export default class ConnectionQueue {
    * @return {ConnectionQueue} - ConnectionQueue without the resp. connection
    */
   dequeue(connection) {
-    if (!this.includes(connection)) {
-      throw new Error(`Cant dequeue unknown connection.`);
-    }
-
     const item = new ConnectionQueueItem(connection);
 
-    return new ConnectionQueue(this.connections.filter(v => !v.equals(item)));
+    return new ConnectionQueue(
+      this.connections.filter(arrayItem => !arrayItem.equals(item))
+    );
   }
 
   includes(connection) {

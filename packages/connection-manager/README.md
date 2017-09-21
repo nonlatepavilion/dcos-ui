@@ -27,9 +27,7 @@ At the moment `connection-manager` package exposes only one connection `XHRConne
 const connection = new XHRConnection("http://127.0.0.1", {
   method: "POST",
   body: "{}",
-  headers: {
-    "Content-Type": "application/json"
-  }
+  contentType: "json"
 });
 ```
 

@@ -106,12 +106,11 @@ export default class ConnectionManager {
    *
    * @this ConnectionManager~Context
    * @param {AbstractConnection} connection – connection to queue
-   * @param {Integer} [priority=0] – optional change of priority, will be
-   *   updated inside connection
+   * @param {Integer} [priority] – optional change of priority
    */
-  enqueue(connection, priority = 0) {
+  enqueue(connection, priority) {
     if (connection.state === AbstractConnection.CLOSED) {
-      throw new Error("Cant enqueue closed connection.");
+      return;
     }
 
     if (connection.state === AbstractConnection.INIT) {
@@ -126,10 +125,12 @@ export default class ConnectionManager {
     }
 
     connection.addListener(ConnectionEvent.ABORT, this.handleConnectionAbort);
+
     connection.addListener(
       ConnectionEvent.COMPLETE,
       this.handleConnectionComplete
     );
+
     connection.addListener(ConnectionEvent.ERROR, this.handleConnectionError);
 
     this.next();
@@ -142,11 +143,8 @@ export default class ConnectionManager {
    * @param {AbstractConnection} connection – connection to dequeue
    */
   dequeue(connection) {
-    try {
-      this.waitingConnections = this.waitingConnections.dequeue(connection);
-    } catch (e) {
-      this.openConnections = this.openConnections.dequeue(connection);
-    }
+    this.waitingConnections = this.waitingConnections.dequeue(connection);
+    this.openConnections = this.openConnections.dequeue(connection);
 
     connection.removeListener(
       ConnectionEvent.ABORT,

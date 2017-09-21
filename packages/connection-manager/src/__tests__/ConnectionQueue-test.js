@@ -64,7 +64,7 @@ describe("ConnectionQueue", () => {
           .enqueue(connection1)
           .dequeue(connection1);
 
-        expect(() => queue.first()).toThrow();
+        expect(queue.first()).toBe(undefined);
       });
 
       it("dequeues correctly (size)", () => {
@@ -77,7 +77,7 @@ describe("ConnectionQueue", () => {
     });
     describe("with connection that doesn't exist", function() {
       it("doesn't do anything", () => {
-        expect(() => new ConnectionQueue().dequeue(connection1)).toThrow();
+        expect(() => new ConnectionQueue().dequeue(connection1)).not.toThrow();
       });
     });
   });
@@ -91,10 +91,10 @@ describe("ConnectionQueue", () => {
 
       expect(queue.first()).toBe(connection3);
     });
-    it("throws error when calling first on empty queue", function() {
+    it("returns undefined when calling first on empty queue", function() {
       const queue = new ConnectionQueue();
 
-      expect(() => queue.first()).toThrow();
+      expect(queue.first()).toBe(undefined);
     });
   });
 
@@ -106,9 +106,12 @@ describe("ConnectionQueue", () => {
         .enqueue(connection3, 3)
         .shift();
 
-      expect(
-        queue.connections.includes(new ConnectionQueueItem(connection3))
-      ).toEqual(false);
+      expect(queue.includes(connection3)).toEqual(false);
+    });
+    it("returns empty queue when shift() on empty queue", function() {
+      const queue = new ConnectionQueue().shift();
+
+      expect(queue.size).toEqual(0);
     });
   });
 

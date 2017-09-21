@@ -53,7 +53,7 @@ describe("ConnectionManager", () => {
 
       expect(() => {
         ConnectionManager.enqueue(connection1);
-      }).toThrow();
+      }).not.toThrow();
     });
 
     it("opens connection if slot is free and connection not open yet", () => {
