@@ -20,7 +20,7 @@ const METHODS_TO_BIND = [
   "handleChangeInputFieldDestroy",
   "handleModalClose",
   "handleRightButtonClick",
-  "handleChangeInputForceDeleteGroupWithServices"
+  "handleServiceNameInputKeyPress"
 ];
 
 class ServiceDestroyModal extends React.Component {
@@ -111,10 +111,16 @@ class ServiceDestroyModal extends React.Component {
     });
   }
 
-  handleChangeInputForceDeleteGroupWithServices(event) {
+  handleKeyPressInputFieldDestroy(event) {
     this.setState({
       forceDeleteGroupWithServices: event.target.checked
     });
+  }
+
+  handleServiceNameInputKeyPress(target) {
+    if (target.charCode === 13) {
+      this.handleRightButtonClick();
+    }
   }
 
   getIsRightButtonDisabled() {
@@ -177,7 +183,7 @@ class ServiceDestroyModal extends React.Component {
             <input
               type="checkbox"
               checked={this.state.forceDeleteGroupWithServices}
-              onChange={this.handleChangeInputForceDeleteGroupWithServices}
+              onChange={this.handleServiceNameInputKeyPress}
             />
             <b>FORCE DELETE SERVICES IN GROUP</b>
           </label>
@@ -235,6 +241,7 @@ class ServiceDestroyModal extends React.Component {
               onChange={this.handleChangeInputFieldDestroy}
               type="text"
               value={this.state.serviceNameConfirmationValue}
+              onKeyPress={this.handleServiceNameInputKeyPress}
               autoFocus
             />
           </div>}
